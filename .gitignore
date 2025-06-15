@@ -1,0 +1,41 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.so
+*.pyo
+
+# Virtual environments
+venv/
+.env/
+*.env
+
+# Django-specific
+db.sqlite3
+media/
+staticfiles/
+*.log
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# MacOS
+.DS_Store
+
+# Pip files
+pip-log.txt
+
+# Test coverage
+htmlcov/
+.coverage
+.tox/
+.nox/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# VS Code Python
+*.code-workspace
+.pytest_cache/
