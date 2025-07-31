@@ -11,11 +11,13 @@ class AccountModelTest(TestCase):
             name='Everyday Checking',
             account_type='checking',
             institution='Test Bank',
-            created_at=date(2024, 1, 1)
+            created_at=date(2024, 1, 1),
+            country='US'
         )
         self.assertEqual(account.name, 'Everyday Checking')
         self.assertEqual(account.account_type, 'checking')
         self.assertEqual(account.institution, 'Test Bank')
+        self.assertEqual(account.country, 'US')
 
 
 class TransactionModelTest(TestCase):

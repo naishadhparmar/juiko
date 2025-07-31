@@ -1,4 +1,5 @@
 from django.db import models
+import pycountry
 
 class StatementUpload(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)  # when the file was uploaded
@@ -22,7 +23,8 @@ class Account(models.Model):
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES)
     institution = models.CharField(max_length=100, blank=False)
     created_at = models.DateTimeField()
-
+    country = models.CharField(max_length=2, choices=[(c.alpha_2, c.name) for c in pycountry.countries], default='US')
+    
     def __str__(self):
         return f"{self.name} ({self.get_account_type_display()})"
 
