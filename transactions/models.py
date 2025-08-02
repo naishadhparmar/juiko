@@ -1,14 +1,6 @@
 from django.db import models
 import pycountry
 
-class StatementUpload(models.Model):
-    uploaded_at = models.DateTimeField(auto_now_add=True)  # when the file was uploaded
-    file = models.FileField(upload_to='statements/')  # saved under /media/statements/
-    processed = models.BooleanField(default=False)    # whether it's been parsed yet
-
-    def __str__(self):
-        return f"{self.file.name} (processed={self.processed})"
-    
 class Account(models.Model):
     ACCOUNT_TYPES = [
         ('checking', 'Checking Account'),
@@ -28,6 +20,15 @@ class Account(models.Model):
     def __str__(self):
         return f"{self.name} ({self.get_account_type_display()})"
 
+class StatementUpload(models.Model):
+    uploaded_at = models.DateTimeField(auto_now_add=True)  # when the file was uploaded
+    file = models.FileField(upload_to='statements/')  # saved under /media/statements/
+    processed = models.BooleanField(default=False)    # whether it's been parsed yet
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='statement_uploads', null=True)
+
+    def __str__(self):
+        return f"{self.file.name} associated with {self.account} (processed={self.processed})"
+    
 class Transaction(models.Model):
     """
     Model representing a financial transaction.

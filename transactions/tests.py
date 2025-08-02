@@ -1,5 +1,6 @@
 from django.test import TestCase
-from transactions.models import Account, Transaction
+from transactions.models import Account, Transaction, StatementUpload
+from django.utils import timezone
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.utils import IntegrityError
 from datetime import date
@@ -26,7 +27,8 @@ class TransactionModelTest(TestCase):
             name='Test Credit Card',
             account_type='credit',
             institution='TestBank',
-            created_at=date(2024, 1, 1)
+            created_at=date(2024, 1, 1),
+            country='US'
         )
 
     def test_create_transaction(self):
@@ -55,3 +57,30 @@ class TransactionModelTest(TestCase):
                 category='Misc',
                 account=None
             )
+
+
+class StatementUploadModelTest(TestCase):
+    def setUp(self):
+        self.account = Account.objects.create(
+            name="Test Account",
+            account_type="checking",
+            institution="Test Bank",
+            created_at=timezone.now(),
+            country="US"
+        )
+
+    def test_create_statement_upload(self):
+        # Create a dummy file
+        test_file = SimpleUploadedFile("test_statement.xlsx", b"Dummy content")
+
+        # Create the StatementUpload
+        upload = StatementUpload.objects.create(
+            file=test_file,
+            account=self.account
+        )
+
+        # Assertions
+        self.assertEqual(StatementUpload.objects.count(), 1)
+        self.assertEqual(upload.account, self.account)
+        self.assertTrue(upload.file.name.endswith("test_statement.xlsx"))
+        self.assertIsNotNone(upload.uploaded_at)
