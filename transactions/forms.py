@@ -5,6 +5,9 @@ class StatementUploadForm(forms.ModelForm):
     class Meta:
         model = StatementUpload
         fields = ['file']
+        widgets = {
+            'account': forms.Select(attrs={'class': 'form-select'}),
+        }
 
 class AccountForm(forms.ModelForm):
     class Meta:

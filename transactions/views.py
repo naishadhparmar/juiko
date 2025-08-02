@@ -1,25 +1,28 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from .forms import StatementUploadForm, AccountForm
 from .models import Transaction
 from django.contrib import messages
 from transactions.models import StatementUpload, Account
 
 def upload_statement(request):
+    accounts = Account.objects.all()
+
     if request.method == 'POST':
         form = StatementUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            statement = form.save()
+        account_id = request.POST.get('account')
+        if form.is_valid() and account_id:
+            account = get_object_or_404(Account, id=account_id)
+            statement = form.save(commit=False)
+            statement.account = account
+            statement.save()        
             messages.success(request, f"File uploaded: {statement.file.name}")
             return redirect('upload_statement')  # Redirect to avoid re-upload on refresh
     else:
         form = StatementUploadForm()
-    
-    uploads = StatementUpload.objects.order_by('-uploaded_at')
 
-    return render(request, 'transactions/upload_statement.html', {
-        'form': form,
-        'uploads': uploads
-    })
+    
+    uploads = StatementUpload.objects.select_related('account').order_by('-uploaded_at')
+    return render(request, 'transactions/upload_statement.html', {'form': form, 'uploads': uploads, 'accounts': accounts})
 
 def create_account(request):
     if request.method == 'POST':

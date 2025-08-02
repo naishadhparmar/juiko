@@ -21,6 +21,17 @@
     <form method="post" enctype="multipart/form-data" id="upload-form" class="mb-4">
         {% csrf_token %}
 
+        <!-- Account dropdown -->
+        <div>
+            <label for="account" class="form-label">Account</label>
+            <select name="account" id="account" class="form-select" required>
+                <option value="">-- Select Account --</option>
+                {% for account in accounts %}
+                    <option value="{{ account.id }}">{{ account.name }} ({{ account.institution }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
         <!-- Hidden file input -->
         <input type="file" id="file-input" name="file" accept=".xls,.xlsx,.csv" hidden>
 
@@ -28,13 +39,18 @@
         <button type="button" class="btn btn-primary" id="upload-btn">Upload Statement</button>
     </form>
 
-    <script>
+ <script>
         const uploadBtn = document.getElementById('upload-btn');
         const fileInput = document.getElementById('file-input');
         const form = document.getElementById('upload-form');
+        const accountSelect = document.getElementById('account');
 
         // When button is clicked, trigger file picker
         uploadBtn.addEventListener('click', () => {
+            if (!accountSelect.value) {
+                alert("Please select an account first.");
+                return;
+            }
             fileInput.click();
         });
 
@@ -54,6 +70,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Filename</th>
+                        <th>Account</th>
                         <th>Uploaded At</th>
                         <th>Processed</th>
                         <th>Link</th>
@@ -64,6 +81,7 @@
                     <tr>
                         <td>{{ upload.id }}</td>
                         <td>{{ upload.file.name|slice:"10:" }}</td>
+                        <td>{{ upload.account.name }} ({{ upload.account.institution }})</td>
                         <td>{{ upload.uploaded_at|date:"Y-m-d H:i" }}</td>
                         <td>
                             {% if upload.processed %}
@@ -83,7 +101,6 @@
     {% endif %}
 </div>
 
-<!-- Bootstrap JS (optional, only needed for advanced components) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
