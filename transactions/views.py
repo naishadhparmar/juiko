@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
-from .forms import StatementUploadForm
+from .forms import StatementUploadForm, AccountForm
 from .models import Transaction
 from django.contrib import messages
-from transactions.models import StatementUpload
+from transactions.models import StatementUpload, Account
 
 def upload_statement(request):
     if request.method == 'POST':
@@ -20,3 +20,18 @@ def upload_statement(request):
         'form': form,
         'uploads': uploads
     })
+
+def create_account(request):
+    if request.method == 'POST':
+        form = AccountForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('list_accounts')
+    else:
+        form = AccountForm()
+
+    return render(request, 'transactions/create_account.html', {'form': form})
+
+def list_accounts(request):
+    accounts = Account.objects.all()
+    return render(request, 'transactions/list_accounts.html', {'accounts': accounts})

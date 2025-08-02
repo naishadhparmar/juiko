@@ -22,7 +22,7 @@ class Account(models.Model):
     name = models.CharField(max_length=100)
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES)
     institution = models.CharField(max_length=100, blank=False)
-    created_at = models.DateTimeField()
+    created_at = models.DateField()
     country = models.CharField(max_length=2, choices=[(c.alpha_2, c.name) for c in pycountry.countries], default='US')
     
     def __str__(self):
