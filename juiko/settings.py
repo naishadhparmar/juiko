@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'transactions.apps.TransactionsConfig'
+    'transactions.apps.TransactionsConfig',
+    'ai_engine.apps.AiEngineConfig'
 ]
 
 MIDDLEWARE = [
