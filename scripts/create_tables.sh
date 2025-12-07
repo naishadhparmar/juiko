@@ -1,0 +1,1 @@
+psql -U postgres -d juiko_db -f sql/create_tables.sql
