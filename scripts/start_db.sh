@@ -1,0 +1,1 @@
+pg_ctl -D data -l logs/pg_logfile -o "-p 5430 -h localhost" start

@@ -1,1 +1,0 @@
-createdb -U postgres -O postgres juiko_db

@@ -1,1 +1,0 @@
-postgres -D data >logs/pg_logfile 2>&1 &

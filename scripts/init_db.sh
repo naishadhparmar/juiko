@@ -1,0 +1,1 @@
+initdb -U postgres -D data 

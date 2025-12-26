@@ -7,7 +7,7 @@ class Config:
     postgres_password = getpass.getpass(prompt='Postgres password: ')
     DB_NAME = 'juiko_db'
     URL = 'localhost'
-    PORT = 5432
+    PORT = 5430
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'DATABASE_URL',
         f'postgresql://{postgres_username}:{postgres_password}@{URL}:{PORT}/{DB_NAME}'
