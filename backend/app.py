@@ -7,8 +7,10 @@ from config import Config
 import datetime
 from controllers.transaction import bp as transaction_bp
 from controllers.instrument import bp as instrument_bp
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 app.register_blueprint(transaction_bp, url_prefix='/transaction')
 app.register_blueprint(instrument_bp, url_prefix='/instrument')
 app.config.from_object(Config)
