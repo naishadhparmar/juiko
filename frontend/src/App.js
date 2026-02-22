@@ -7,6 +7,7 @@ import FilterableInstrumentTable from './pages/instrument';
 function App() {
   const [currentPage, setCurrentPage] = useState('transactions');
   const [transactions, setTransactions] = useState([]);
+  const [transactionLookup, setTransactionLookup] = useState({});
   const [instruments, setInstruments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,7 +22,8 @@ function App() {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
           const data = await response.json();
-          setTransactions(data);
+          setTransactions(data.transactions);
+          setTransactionLookup(data.lookup || {});
         } else if (currentPage === 'instruments') {
           const response = await fetch('http://127.0.0.1:5000/instrument/');
           if (!response.ok) {
@@ -104,7 +106,7 @@ function App() {
             <p style={{ color: '#64748b', fontSize: '16px' }}>Home page coming soon. Track your financial situation at a glance.</p>
           </div>
         )}
-        {!loading && !error && currentPage === 'transactions' && <FilterableTransactionTable transactions={transactions} />}
+        {!loading && !error && currentPage === 'transactions' && <FilterableTransactionTable transactions={transactions} lookup={transactionLookup} />}
         {!loading && !error && currentPage === 'instruments' && <FilterableInstrumentTable instruments={instruments} />}
       </div>
     </div>

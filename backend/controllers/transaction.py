@@ -10,7 +10,19 @@ bp = Blueprint('transaction_bp', __name__)
 def get_all_transactions():
     db = current_app.config['db']
     transactions = db.session.query(Transaction).all()
-    return jsonify([transaction.json() for transaction in transactions])
+    instruments = db.session.query(Instrument).all()
+    
+    # Build instrument lookup
+    instrument_lookup = {}
+    for instrument in instruments:
+        instrument_lookup[str(instrument.id)] = instrument.json()
+    
+    return jsonify({
+        "transactions": [transaction.json() for transaction in transactions],
+        "lookup": {
+            "instrument": instrument_lookup
+        }
+    })
 
 @bp.get('/<int:transaction_id>')
 def get_transaction_by_id(transaction_id):

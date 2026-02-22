@@ -1,18 +1,26 @@
 import React, { useState, useEffect } from 'react';
 
-function Transaction({ transaction }) {
+function Transaction({ transaction, lookup }) {
+    const getInstrumentName = () => {
+      if (lookup && lookup.instrument && lookup.instrument[transaction.instrument_id]) {
+        const instrument = lookup.instrument[transaction.instrument_id];
+        return `${instrument.account_name}`;
+      }
+      return transaction.instrument_id;
+    };
+
     return (
         <tr key={transaction.key}>
             <td>{transaction.transaction_date}</td>
             <td>{transaction.posted_date}</td>
             <td>{transaction.description}</td>
             <td>{transaction.amount}</td>
-            <td>{transaction.instrument_id}</td>
+            <td>{getInstrumentName()}</td>
         </tr>
     );
 }
 
-function NewTransactionRow({ onCancel, onSubmit }) {
+function NewTransactionRow({ onCancel, onSubmit, instruments }) {
   const [formData, setFormData] = useState({
     transaction_date: '',
     posted_date: '',
@@ -139,14 +147,20 @@ function NewTransactionRow({ onCancel, onSubmit }) {
         />
       </td>
       <td>
-        <input
-          type="number"
+        <select
           name="instrument_id"
-          placeholder="Instrument ID"
           value={formData.instrument_id}
           onChange={handleChange}
           className="new-input"
-        />
+          style={{ cursor: 'pointer' }}
+        >
+          <option value="">Select Instrument</option>
+          {instruments && instruments.map((instrument) => (
+            <option key={instrument.id} value={instrument.id}>
+              {instrument.account_name}
+            </option>
+          ))}
+        </select>
       </td>
       <td className="transaction-actions">
         <button
@@ -166,8 +180,16 @@ function NewTransactionRow({ onCancel, onSubmit }) {
   );
 }
 
-export default function FilterableTransactionTable({ transactions }) {
+export default function FilterableTransactionTable({ transactions, lookup }) {
   const [isAddingTransaction, setIsAddingTransaction] = useState(false);
+  
+  // Extract instruments from lookup data
+  const getInstruments = () => {
+    if (lookup && lookup.instrument) {
+      return Object.values(lookup.instrument);
+    }
+    return [];
+  };
 
   const handleAddTransaction = async (formData) => {
     try {
@@ -214,7 +236,7 @@ export default function FilterableTransactionTable({ transactions }) {
               <th>Posted Date</th>
               <th>Description</th>
               <th>Amount</th>
-              <th>Instrument ID</th>
+              <th>Instrument</th>
               {isAddingTransaction && <th>Actions</th>}
             </tr>
           </thead>
@@ -223,10 +245,11 @@ export default function FilterableTransactionTable({ transactions }) {
               <NewTransactionRow 
                 onCancel={() => setIsAddingTransaction(false)}
                 onSubmit={handleAddTransaction}
+                instruments={getInstruments()}
               />
             )}
             {transactions.map((transaction) => (
-              <Transaction transaction={transaction} />
+              <Transaction transaction={transaction} lookup={lookup} />
             ))}
           </tbody>
         </table>
