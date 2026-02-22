@@ -241,12 +241,19 @@ tbody tr:hover {
   font-size: 14px;
   box-sizing: border-box;
   font-family: inherit;
+  color: var(--text-primary);
+  background-color: white;
 }
 
 .new-input:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.1);
+}
+
+.new-input option {
+  color: var(--text-primary);
+  background-color: white;
 }
 
 .transaction-actions {
