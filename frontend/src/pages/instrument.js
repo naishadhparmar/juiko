@@ -11,20 +11,22 @@ function Instrument({ instrument }) {
 
 export default function FilterableInstrumentTable({ instruments }) {
   return (
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Financial Institution</th>
-          <th>Account Name</th>
-          <th>Instrument Type</th>
-        </tr>
-      </thead>
-      <tbody> 
-            {instruments.map((instrument) => ( 
-                <Instrument instrument={instrument} />
-            ))}
-        </tbody>
-    </table>
+    <div className="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Financial Institution</th>
+            <th>Account Name</th>
+            <th>Instrument Type</th>
+          </tr>
+        </thead>
+        <tbody> 
+              {instruments.map((instrument) => ( 
+                  <Instrument instrument={instrument} />
+              ))}
+          </tbody>
+      </table>
+    </div>
   );
 }

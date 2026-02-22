@@ -42,32 +42,71 @@ function App() {
     fetchData();
   }, [currentPage]);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  const getPageTitle = () => {
+    switch(currentPage) {
+      case 'home':
+        return 'Financial Overview';
+      case 'transactions':
+        return 'Transactions';
+      case 'instruments':
+        return 'Instruments';
+      default:
+        return 'Juiko';
+    }
+  };
 
   return (
-    <div>
-      <nav style={{ marginBottom: '20px' }}>
-        <button 
-          onClick={() => setCurrentPage('transactions')}
-          style={{ marginRight: '10px', fontWeight: currentPage === 'transactions' ? 'bold' : 'normal' }}
-        >
-          Transactions
-        </button>
-        <button 
-          onClick={() => setCurrentPage('instruments')}
-          style={{ fontWeight: currentPage === 'instruments' ? 'bold' : 'normal' }}
-        >
-          Instruments
-        </button>
-      </nav>
-      {currentPage === 'transactions' && <FilterableTransactionTable transactions={transactions} />}
-      {currentPage === 'instruments' && <FilterableInstrumentTable instruments={instruments} />}
+    <div className="App">
+      <div className="sidebar">
+        <div className="sidebar-header">
+          <h1 className="sidebar-title">Juiko</h1>
+        </div>
+        <nav className="sidebar-nav">
+          <button 
+            className={`sidebar-button ${currentPage === 'home' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('home')}
+          >
+            📊 Home
+          </button>
+          <button 
+            className={`sidebar-button ${currentPage === 'transactions' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('transactions')}
+          >
+            💳 Transactions
+          </button>
+          <button 
+            className={`sidebar-button ${currentPage === 'instruments' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('instruments')}
+          >
+            🏦 Instruments
+          </button>
+        </nav>
+      </div>
+
+      <div className="main-content">
+        <div className="content-header">
+          <h2 className="content-title">{getPageTitle()}</h2>
+        </div>
+
+        {loading && (
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+          </div>
+        )}
+        {error && (
+          <div className="error-container">
+            <div className="error-text">Error Loading Data</div>
+            <div className="error-details">{error}</div>
+          </div>
+        )}
+        {!loading && !error && currentPage === 'home' && (
+          <div className="table-container" style={{ padding: '32px', textAlign: 'center' }}>
+            <p style={{ color: '#64748b', fontSize: '16px' }}>Home page coming soon. Track your financial situation at a glance.</p>
+          </div>
+        )}
+        {!loading && !error && currentPage === 'transactions' && <FilterableTransactionTable transactions={transactions} />}
+        {!loading && !error && currentPage === 'instruments' && <FilterableInstrumentTable instruments={instruments} />}
+      </div>
     </div>
   );
 }

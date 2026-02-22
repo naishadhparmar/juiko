@@ -12,21 +12,23 @@ function Transaction({ transaction }) {
 
 export default function FilterableTransactionTable({ transactions }) {
   return (
-    <table>
-      <thead>
-        <tr>
-          <th>Transaction Date</th>
-          <th>Posted Date</th>
-          <th>Description</th>
-          <th>Amount</th>
-          <th>Instrument ID</th>
-        </tr>
+    <div className="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Transaction Date</th>
+            <th>Posted Date</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Instrument ID</th>
+          </tr>
         </thead>
         <tbody> 
             {transactions.map((transaction) => ( 
                 <Transaction transaction={transaction} />
             ))}
         </tbody>
-    </table>
+      </table>
+    </div>
   );
 }
