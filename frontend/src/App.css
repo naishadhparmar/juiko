@@ -165,3 +165,116 @@ tbody tr:hover {
   color: var(--text-secondary);
   font-size: 13px;
 }
+
+/* Add Transaction Styles */
+.add-transaction-button {
+  padding: 10px 20px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+}
+
+.add-transaction-button:hover:not(:disabled) {
+  background-color: var(--secondary-color);
+}
+
+.add-transaction-button:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+/* Generic Button Styles */
+.btn-primary {
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--secondary-color);
+}
+
+.btn-primary:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  padding: 8px 16px;
+  background-color: var(--danger-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c;
+}
+
+.btn-danger:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+/* New Transaction Row Styles */
+.new-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.new-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.1);
+}
+
+.transaction-actions {
+  display: flex;
+  gap: 8px;
+  padding: 14px 16px;
+}
+
+/* Confirmation Dialog Styles */
+.confirmation-row {
+  padding: 16px;
+  text-align: center;
+}
+
+.confirmation-content {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.confirmation-text {
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.confirmation-buttons {
+  display: flex;
+  gap: 8px;
+}
