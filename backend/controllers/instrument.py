@@ -9,7 +9,19 @@ bp = Blueprint('instrument_bp', __name__)
 def get_all_instruments():
     db = current_app.config['db']
     instruments = db.session.query(Instrument).all()
-    return jsonify([instrument.json() for instrument in instruments])
+    instrument_types = db.session.query(InstrumentType).all()
+    
+    # Build instrument type lookup
+    instrument_type_lookup = {}
+    for instrument_type in instrument_types:
+        instrument_type_lookup[str(instrument_type.get_id())] = instrument_type.json()
+    
+    return jsonify({
+        "instruments": [instrument.json() for instrument in instruments],
+        "lookup": {
+            "instrument_type": instrument_type_lookup
+        }
+    })
 
 @bp.get('/<int:instrument_id>')
 def get_instrument_by_id(instrument_id):

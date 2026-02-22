@@ -9,6 +9,7 @@ function App() {
   const [transactions, setTransactions] = useState([]);
   const [transactionLookup, setTransactionLookup] = useState({});
   const [instruments, setInstruments] = useState([]);
+  const [instrumentLookup, setInstrumentLookup] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -30,7 +31,8 @@ function App() {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
           const data = await response.json();
-          setInstruments(data);
+          setInstruments(data.instruments);
+          setInstrumentLookup(data.lookup || {});
         }
         setError(null);
         setLoading(false);
@@ -107,7 +109,7 @@ function App() {
           </div>
         )}
         {!loading && !error && currentPage === 'transactions' && <FilterableTransactionTable transactions={transactions} lookup={transactionLookup} />}
-        {!loading && !error && currentPage === 'instruments' && <FilterableInstrumentTable instruments={instruments} />}
+        {!loading && !error && currentPage === 'instruments' && <FilterableInstrumentTable instruments={instruments} lookup={instrumentLookup} />}
       </div>
     </div>
   );

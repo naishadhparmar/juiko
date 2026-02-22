@@ -18,5 +18,11 @@ class InstrumentType(Base):
     def get_type_name(self) -> str:
         return self.type_name
 
+    def json(self):
+        return {
+            "id": self.id,
+            "type_name": self.type_name
+        }
+    
     def __repr__(self):
         return f"<id={self.id} type_name={self.type_name}>"

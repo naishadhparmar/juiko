@@ -20,7 +20,6 @@ class Instrument(Base):
             "id": self.id,
             "financial_institution": self.financial_institution,
             "account_name": self.account_name,
-            "instrument_type": self.instrument_type.type_name,
             "type": self.type
         }
 

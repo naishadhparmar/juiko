@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 
-function Instrument({ instrument }) {
+function Instrument({ instrument, lookup }) {
+    const getInstrumentTypeName = () => {
+      if (lookup && lookup.instrument_type && lookup.instrument_type[`${instrument.type}`]) {
+        const instrument_type = lookup.instrument_type[`${instrument.type}`];
+        return `${instrument_type.type_name}`;
+      }
+      return instrument.type;
+    };
     return (
         <tr key={instrument.id}>
-            <td>{instrument.id}</td>
-            <td>{instrument.financial_institution}</td>
             <td>{instrument.account_name}</td>
-            <td>{instrument.instrument_type}</td>
+            <td>{instrument.financial_institution}</td>
+            <td>{getInstrumentTypeName()}</td>
         </tr>
     );
 }
@@ -71,7 +77,7 @@ function NewInstrumentRow({ onCancel, onSubmit, instrumentTypes }) {
   if (showConfirmCancel) {
     return (
       <tr className="new-instrument-row">
-        <td colSpan="5" className="confirmation-row">
+        <td colSpan="4" className="confirmation-row">
           <div className="confirmation-content">
             <span className="confirmation-text">Are you sure you want to cancel?</span>
             <div className="confirmation-buttons">
@@ -96,13 +102,12 @@ function NewInstrumentRow({ onCancel, onSubmit, instrumentTypes }) {
 
   return (
     <tr className="new-instrument-row">
-      <td></td>
       <td>
         <input
           type="text"
-          name="financial_institution"
-          placeholder="Financial Institution"
-          value={formData.financial_institution}
+          name="account_name"
+          placeholder="Account Name"
+          value={formData.account_name}
           onChange={handleChange}
           className="new-input"
         />
@@ -110,9 +115,9 @@ function NewInstrumentRow({ onCancel, onSubmit, instrumentTypes }) {
       <td>
         <input
           type="text"
-          name="account_name"
-          placeholder="Account Name"
-          value={formData.account_name}
+          name="financial_institution"
+          placeholder="Financial Institution"
+          value={formData.financial_institution}
           onChange={handleChange}
           className="new-input"
         />
@@ -151,29 +156,16 @@ function NewInstrumentRow({ onCancel, onSubmit, instrumentTypes }) {
   );
 }
 
-export default function FilterableInstrumentTable({ instruments }) {
+export default function FilterableInstrumentTable({ instruments, lookup }) {
   const [isAddingInstrument, setIsAddingInstrument] = useState(false);
-  const [instrumentTypes, setInstrumentTypes] = useState([]);
-  const [loadingTypes, setLoadingTypes] = useState(true);
-
-  useEffect(() => {
-    const fetchInstrumentTypes = async () => {
-      try {
-        const response = await fetch('http://127.0.0.1:5000/instrument_type/');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setInstrumentTypes(data);
-        setLoadingTypes(false);
-      } catch (error) {
-        console.error('Error fetching instrument types:', error);
-        setLoadingTypes(false);
-      }
-    };
-
-    fetchInstrumentTypes();
-  }, []);
+  
+  // Extract instrument types from lookup data
+  const getInstrumentTypes = () => {
+    if (lookup && lookup.instrument_type) {
+      return Object.values(lookup.instrument_type);
+    }
+    return [];
+  };
 
   const handleAddInstrument = async (formData) => {
     try {
@@ -205,7 +197,7 @@ export default function FilterableInstrumentTable({ instruments }) {
       <div>
         <button
           onClick={() => setIsAddingInstrument(true)}
-          disabled={isAddingInstrument || loadingTypes}
+          disabled={isAddingInstrument}
           className="add-transaction-button"
         >
           + Add Instrument
@@ -216,9 +208,8 @@ export default function FilterableInstrumentTable({ instruments }) {
         <table>
           <thead>
             <tr>
-              <th>ID</th>
+              <th>Account Name</th>                
               <th>Financial Institution</th>
-              <th>Account Name</th>
               <th>Instrument Type</th>
               {isAddingInstrument && <th>Actions</th>}
             </tr>
@@ -228,11 +219,11 @@ export default function FilterableInstrumentTable({ instruments }) {
               <NewInstrumentRow 
                 onCancel={() => setIsAddingInstrument(false)}
                 onSubmit={handleAddInstrument}
-                instrumentTypes={instrumentTypes}
+                instrumentTypes={getInstrumentTypes()}
               />
             )}
             {instruments.map((instrument) => (
-              <Instrument instrument={instrument} />
+              <Instrument instrument={instrument} lookup={lookup} />
             ))}
           </tbody>
         </table>
