@@ -285,3 +285,70 @@ tbody tr:hover {
   display: flex;
   gap: 8px;
 }
+
+/* Tag Styles */
+.tags-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #1e40af;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.tag-remove:hover {
+  opacity: 1;
+}
+
+.tag-add-btn {
+  background: none;
+  border: 1px dashed var(--border-color);
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 8px;
+  border-radius: 12px;
+  transition: all 0.15s ease;
+}
+
+.tag-add-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.tag-input {
+  width: 80px;
+  padding: 2px 6px;
+  border: 1px solid var(--primary-color);
+  border-radius: 12px;
+  font-size: 12px;
+  outline: none;
+  font-family: inherit;
+  color: var(--text-primary);
+}
