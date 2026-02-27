@@ -20,7 +20,8 @@ class Instrument(Base):
             "id": self.id,
             "financial_institution": self.financial_institution,
             "account_name": self.account_name,
-            "type": self.type
+            "type": self.type,
+            "transaction_count": len(self.transactions)
         }
 
     def __repr__(self):

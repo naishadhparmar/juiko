@@ -54,3 +54,44 @@ def add_instrument():
     db.session.add(instrument)
     db.session.commit()
     return jsonify(instrument.json()), 201
+
+@bp.put('/<int:instrument_id>')
+def update_instrument(instrument_id):
+    db = current_app.config['db']
+    instrument = db.session.query(Instrument).get_or_404(instrument_id)
+
+    financial_institution = request.form.get('financial_institution', '')
+    if financial_institution == '':
+        return jsonify({"error": "financial_institution is required"}), 400
+
+    account_name = request.form.get('account_name', '')
+    if account_name == '':
+        return jsonify({"error": "account_name is required"}), 400
+
+    instrument_type = request.form.get('instrument_type', '')
+    if instrument_type == '':
+        return jsonify({"error": "instrument_type is required"}), 400
+    else:
+        try:
+            instrument_type = int(instrument_type)
+            db.session.query(InstrumentType).get_or_404(instrument_type)
+        except ValueError:
+            return jsonify({"error": "Invalid instrument type"}), 400
+
+    instrument.financial_institution = financial_institution
+    instrument.account_name = account_name
+    instrument.type = instrument_type
+    db.session.commit()
+    return jsonify(instrument.json()), 200
+
+@bp.delete('/<int:instrument_id>')
+def delete_instrument(instrument_id):
+    db = current_app.config['db']
+    instrument = db.session.query(Instrument).get_or_404(instrument_id)
+
+    if instrument.transactions:
+        return jsonify({"error": "Cannot delete instrument with existing transactions. Delete or reassign them first."}), 409
+
+    db.session.delete(instrument)
+    db.session.commit()
+    return jsonify({"message": "Instrument deleted"}), 200
