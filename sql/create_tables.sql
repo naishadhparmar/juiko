@@ -43,9 +43,12 @@ CREATE TABLE IF NOT EXISTS transactions (
     FOREIGN KEY (statement_id) REFERENCES statements(id)
 );
 
+CREATE TYPE tag_source AS ENUM ('manual', 'ai');
+
 CREATE TABLE IF NOT EXISTS transaction_tags (
     transaction_id INTEGER NOT NULL,
     tag TEXT NOT NULL,
+    source tag_source NOT NULL DEFAULT 'manual',
     PRIMARY KEY (transaction_id, tag),
     FOREIGN KEY (transaction_id) REFERENCES transactions(id)
 );

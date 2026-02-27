@@ -31,7 +31,7 @@ class Transaction(Base):
             "instrument": self.instrument.account_name if self.instrument else None,
             "statement_id": self.statement_id,
             "source": "manual" if self.statement_id is None else self.statement_id,
-            "tags": [tag.tag for tag in self.tags]
+            "tags": [{"tag": tag.tag, "source": tag.source} for tag in self.tags]
         }
 
     def __repr__(self):

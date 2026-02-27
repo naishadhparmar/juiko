@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-function Transaction({ transaction, lookup, instruments, onDelete }) {
+function Transaction({ transaction, lookup, instruments, onDelete, isSelected, onToggle }) {
     const [tags, setTags] = useState(transaction.tags || []);
     const [newTag, setNewTag] = useState('');
     const [isAddingTag, setIsAddingTag] = useState(false);
@@ -42,7 +42,7 @@ function Transaction({ transaction, lookup, instruments, onDelete }) {
                 body: new URLSearchParams({ transaction_id: transaction.id, tag })
             });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            setTags(prev => [...prev, tag]);
+            setTags(prev => [...prev, { tag, source: 'manual' }]);
             setNewTag('');
             setIsAddingTag(false);
         } catch (error) {
@@ -50,14 +50,14 @@ function Transaction({ transaction, lookup, instruments, onDelete }) {
         }
     };
 
-    const handleRemoveTag = async (tag) => {
+    const handleRemoveTag = async (tagObj) => {
         try {
             const response = await fetch(
-                `http://127.0.0.1:5000/transaction/tag/?transaction_id=${transaction.id}&tag=${encodeURIComponent(tag)}`,
+                `http://127.0.0.1:5000/transaction/tag/?transaction_id=${transaction.id}&tag=${encodeURIComponent(tagObj.tag)}`,
                 { method: 'DELETE' }
             );
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            setTags(prev => prev.filter(t => t !== tag));
+            setTags(prev => prev.filter(t => t.tag !== tagObj.tag));
         } catch (error) {
             alert('Error removing tag: ' + error.message);
         }
@@ -76,10 +76,10 @@ function Transaction({ transaction, lookup, instruments, onDelete }) {
 
     const tagsCell = (
         <div className="tags-cell">
-            {tags.map(tag => (
-                <span key={tag} className="tag-pill">
-                    {tag}
-                    <button className="tag-remove" onClick={() => handleRemoveTag(tag)}>×</button>
+            {tags.map(t => (
+                <span key={t.tag} className={`tag-pill${t.source === 'ai' ? ' ai' : ''}`}>
+                    {t.tag}
+                    <button className="tag-remove" onClick={() => handleRemoveTag(t)}>×</button>
                 </span>
             ))}
             {isAddingTag ? (
@@ -158,7 +158,7 @@ function Transaction({ transaction, lookup, instruments, onDelete }) {
     if (showConfirmDelete) {
         return (
             <tr>
-                <td colSpan="7" className="confirmation-row">
+                <td colSpan="8" className="confirmation-row">
                     <div className="confirmation-content">
                         <span className="confirmation-text">Delete this transaction?</span>
                         <div className="confirmation-buttons">
@@ -178,6 +178,7 @@ function Transaction({ transaction, lookup, instruments, onDelete }) {
     if (isEditing) {
         return (
             <tr className="new-transaction-row">
+                <td></td>
                 <td>
                     <input
                         type="date"
@@ -245,6 +246,9 @@ function Transaction({ transaction, lookup, instruments, onDelete }) {
 
     return (
         <tr>
+            <td className="checkbox-cell">
+                <input type="checkbox" checked={isSelected} onChange={() => onToggle(transaction.id)} />
+            </td>
             <td>{displayData.transaction_date}</td>
             <td>{displayData.posted_date}</td>
             <td>{displayData.description}</td>
@@ -353,7 +357,7 @@ function NewTransactionRow({ onCancel, onSubmit, instruments }) {
     if (showConfirmCancel) {
         return (
             <tr className="new-transaction-row">
-                <td colSpan="7" className="confirmation-row">
+                <td colSpan="8" className="confirmation-row">
                     <div className="confirmation-content">
                         <span className="confirmation-text">Are you sure you want to cancel?</span>
                         <div className="confirmation-buttons">
@@ -378,6 +382,7 @@ function NewTransactionRow({ onCancel, onSubmit, instruments }) {
 
     return (
         <tr className="new-transaction-row">
+            <td></td>
             <td>
                 <input
                     type="date"
@@ -511,8 +516,7 @@ function UploadStatementModal({ onClose, instruments }) {
             } else {
                 setResult({
                     type: 'success',
-                    message: `Successfully imported ${data.imported} transaction${data.imported === 1 ? '' : 's'}.`,
-                    warnings: data.warnings
+                    message: 'Statement uploaded. Processing in background — check the Statements page for status.'
                 });
             }
         } catch (error) {
@@ -561,11 +565,6 @@ function UploadStatementModal({ onClose, instruments }) {
                 {result && (
                     <div className={`upload-result ${result.type}`}>
                         {result.message}
-                        {result.warnings && result.warnings.length > 0 && (
-                            <div className="upload-warnings">
-                                {result.warnings.length} row{result.warnings.length === 1 ? '' : 's'} skipped due to errors.
-                            </div>
-                        )}
                     </div>
                 )}
 
@@ -595,8 +594,54 @@ export default function FilterableTransactionTable({ transactions, lookup }) {
     const [isAddingTransaction, setIsAddingTransaction] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [txList, setTxList] = useState(transactions);
+    const [selectedIds, setSelectedIds] = useState(new Set());
+    const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+    const selectAllRef = useRef(null);
 
     const instruments = lookup && lookup.instrument ? Object.values(lookup.instrument) : [];
+
+    useEffect(() => {
+        if (selectAllRef.current) {
+            selectAllRef.current.indeterminate = selectedIds.size > 0 && selectedIds.size < txList.length;
+        }
+    }, [selectedIds, txList]);
+
+    const handleToggle = (id) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const handleToggleAll = () => {
+        if (selectedIds.size === txList.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(txList.map(t => t.id)));
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        const ids = [...selectedIds];
+        let failed = 0;
+        for (const id of ids) {
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/transaction/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    setTxList(prev => prev.filter(t => t.id !== id));
+                    setSelectedIds(prev => { const next = new Set(prev); next.delete(id); return next; });
+                } else {
+                    failed++;
+                }
+            } catch {
+                failed++;
+            }
+        }
+        setShowBulkDeleteConfirm(false);
+        if (failed > 0) alert(`${failed} transaction(s) could not be deleted.`);
+    };
 
     const handleAddTransaction = async (formData) => {
         try {
@@ -624,6 +669,7 @@ export default function FilterableTransactionTable({ transactions, lookup }) {
 
     const handleDelete = (id) => {
         setTxList(prev => prev.filter(t => t.id !== id));
+        setSelectedIds(prev => { const next = new Set(prev); next.delete(id); return next; });
     };
 
     return (
@@ -649,12 +695,39 @@ export default function FilterableTransactionTable({ transactions, lookup }) {
                 >
                     Upload Statement
                 </button>
+                {selectedIds.size > 0 && (
+                    <button
+                        onClick={() => setShowBulkDeleteConfirm(true)}
+                        className="add-transaction-button"
+                        style={{ backgroundColor: 'white', color: 'var(--danger-color)', border: '1px solid var(--danger-color)' }}
+                    >
+                        Delete Selected ({selectedIds.size})
+                    </button>
+                )}
             </div>
+
+            {showBulkDeleteConfirm && (
+                <div className="bulk-delete-bar">
+                    <span>Delete {selectedIds.size} transaction{selectedIds.size === 1 ? '' : 's'}?</span>
+                    <div className="confirmation-buttons">
+                        <button onClick={() => setShowBulkDeleteConfirm(false)} className="btn-primary">Cancel</button>
+                        <button onClick={handleBulkDelete} className="btn-danger">Yes, Delete</button>
+                    </div>
+                </div>
+            )}
 
             <div className="table-container">
                 <table>
                     <thead>
                         <tr>
+                            <th className="checkbox-cell">
+                                <input
+                                    type="checkbox"
+                                    ref={selectAllRef}
+                                    checked={txList.length > 0 && selectedIds.size === txList.length}
+                                    onChange={handleToggleAll}
+                                />
+                            </th>
                             <th>Transaction Date</th>
                             <th>Posted Date</th>
                             <th>Description</th>
@@ -679,6 +752,8 @@ export default function FilterableTransactionTable({ transactions, lookup }) {
                                 lookup={lookup}
                                 instruments={instruments}
                                 onDelete={handleDelete}
+                                isSelected={selectedIds.has(transaction.id)}
+                                onToggle={handleToggle}
                             />
                         ))}
                     </tbody>

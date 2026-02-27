@@ -3,8 +3,9 @@ import os
 import threading
 from datetime import datetime
 from flask import current_app, Blueprint, request, jsonify
-from models import Statement, Instrument
+from models import Statement, Instrument, TransactionTag
 from services.transaction import create_transaction
+from services.tagging import build_examples, suggest_tag
 
 bp = Blueprint('statement_bp', __name__)
 
@@ -36,12 +37,16 @@ def _process_statement(app, statement_id, rows, col_indices, instrument_id):
             desc_idx   = col_indices['desc']
             amount_idx = col_indices['amount']
 
+            instrument = db.session.get(Instrument, instrument_id)
+            instrument_name = instrument.account_name if instrument else ''
+            examples = build_examples(db)
+
             imported = 0
             for i, row in enumerate(rows, start=2):
                 if not any(cell.strip() for cell in row):
                     continue
                 try:
-                    create_transaction(
+                    transaction = create_transaction(
                         db,
                         transaction_date_str=row[date_idx],
                         description=row[desc_idx],
@@ -52,6 +57,24 @@ def _process_statement(app, statement_id, rows, col_indices, instrument_id):
                     )
                     db.session.commit()
                     imported += 1
+                except Exception:
+                    db.session.rollback()
+                    continue
+
+                try:
+                    tag = suggest_tag(
+                        description=row[desc_idx],
+                        amount=float(transaction.amount),
+                        instrument_name=instrument_name,
+                        examples=examples
+                    )
+                    if tag:
+                        db.session.add(TransactionTag(
+                            transaction_id=transaction.id,
+                            tag=tag,
+                            source='ai'
+                        ))
+                        db.session.commit()
                 except Exception:
                     db.session.rollback()
 
