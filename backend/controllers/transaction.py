@@ -112,3 +112,29 @@ def add_tag_to_transaction():
     db.session.add(transaction_tag)
     db.session.commit()
     return jsonify(transaction_tag.json()), 201
+
+@bp.delete('/tag/')
+def remove_tag_from_transaction():
+    db = current_app.config['db']
+
+    transaction_id = request.args.get('transaction_id', '')
+    if transaction_id == '':
+        return jsonify({"error": "transaction_id is required"}), 400
+    else:
+        try:
+            transaction_id = int(transaction_id)
+            db.session.query(Transaction).get_or_404(transaction_id)
+        except ValueError:
+            return jsonify({"error": "Invalid transaction id"}), 400
+
+    tag = request.args.get('tag', '')
+    if tag == '':
+        return jsonify({"error": "tag is required"}), 400
+
+    transaction_tag = db.session.query(TransactionTag).filter_by(transaction_id=transaction_id, tag=tag).first()
+    if transaction_tag is None:
+        return jsonify({"error": "Tag not found"}), 404
+
+    db.session.delete(transaction_tag)
+    db.session.commit()
+    return jsonify({"message": "Tag removed"}), 200

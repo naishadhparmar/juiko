@@ -13,6 +13,6 @@ class TransactionTag(Base):
 
     def json(self):
         return {
-            "transaction_id": self.id,
+            "transaction_id": self.transaction_id,
             "tag": self.tag
         }
