@@ -90,6 +90,68 @@ def add_transaction():
                 print(response.text)
     return jsonify(transaction.json()), 201
 
+@bp.put('/<int:transaction_id>')
+def update_transaction(transaction_id):
+    db = current_app.config['db']
+    transaction = db.session.query(Transaction).get_or_404(transaction_id)
+
+    transaction_date = request.form.get('transaction_date', '')
+    if transaction_date == '':
+        return jsonify({"error": "transaction_date is required"}), 400
+    else:
+        try:
+            transaction_date = datetime.strptime(transaction_date, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({"error": "Invalid transaction_date format. Use YYYY-MM-DD."}), 400
+
+    posted_date = request.form.get('posted_date', '')
+    if posted_date == '':
+        return jsonify({"error": "posted_date is required"}), 400
+    else:
+        try:
+            posted_date = datetime.strptime(posted_date, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({"error": "Invalid posted_date format. Use YYYY-MM-DD."}), 400
+
+    description = request.form.get('description', '')
+    if description == '':
+        return jsonify({"error": "description is required"}), 400
+
+    amount = request.form.get('amount', '')
+    if amount == '':
+        return jsonify({"error": "amount is required"}), 400
+    else:
+        try:
+            amount = float(amount)
+        except ValueError:
+            return jsonify({"error": "Invalid amount format. Use a number."}), 400
+
+    instrument_id = request.form.get('instrument_id', '')
+    if instrument_id == '':
+        return jsonify({"error": "instrument_id is required"}), 400
+    else:
+        try:
+            instrument_id = int(instrument_id)
+            db.session.query(Instrument).get_or_404(instrument_id)
+        except ValueError:
+            return jsonify({"error": "Invalid instrument id"}), 400
+
+    transaction.transaction_date = transaction_date
+    transaction.posted_date = posted_date
+    transaction.description = description
+    transaction.amount = amount
+    transaction.instrument_id = instrument_id
+    db.session.commit()
+    return jsonify(transaction.json()), 200
+
+@bp.delete('/<int:transaction_id>')
+def delete_transaction(transaction_id):
+    db = current_app.config['db']
+    transaction = db.session.query(Transaction).get_or_404(transaction_id)
+    db.session.delete(transaction)
+    db.session.commit()
+    return jsonify({"message": "Transaction deleted"}), 200
+
 @bp.post('/tag/')
 def add_tag_to_transaction():
     transaction_id = request.form.get('transaction_id', '')
