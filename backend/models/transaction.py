@@ -16,7 +16,7 @@ class Transaction(Base):
 
     # Relationships
     instrument: Mapped["Instrument"] = relationship(back_populates="transactions")
-    tags: Mapped[List["TransactionTag"]] = relationship(back_populates="transaction")
+    tags: Mapped[List["TransactionTag"]] = relationship(back_populates="transaction", cascade="all, delete-orphan")
 
     def json(self):
         return {
