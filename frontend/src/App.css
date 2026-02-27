@@ -232,6 +232,23 @@ tbody tr:hover {
   cursor: not-allowed;
 }
 
+.btn-secondary {
+  padding: 8px 16px;
+  background-color: white;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
 /* New Transaction Row Styles */
 .new-input {
   width: 100%;

@@ -1,17 +1,36 @@
 import React, { useState, useEffect } from 'react';
 
-function Transaction({ transaction, lookup }) {
+function Transaction({ transaction, lookup, instruments, onDelete }) {
     const [tags, setTags] = useState(transaction.tags || []);
     const [newTag, setNewTag] = useState('');
     const [isAddingTag, setIsAddingTag] = useState(false);
 
-    const getInstrumentName = () => {
-        if (lookup && lookup.instrument && lookup.instrument[transaction.instrument_id]) {
-            const instrument = lookup.instrument[transaction.instrument_id];
-            return `${instrument.account_name}`;
+    const [isEditing, setIsEditing] = useState(false);
+    const [editData, setEditData] = useState({
+        transaction_date: transaction.transaction_date,
+        posted_date: transaction.posted_date,
+        description: transaction.description,
+        amount: transaction.amount,
+        instrument_id: transaction.instrument_id
+    });
+    const [displayData, setDisplayData] = useState({
+        transaction_date: transaction.transaction_date,
+        posted_date: transaction.posted_date,
+        description: transaction.description,
+        amount: transaction.amount,
+        instrument_id: transaction.instrument_id
+    });
+
+    const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+
+    const getInstrumentName = (instrument_id) => {
+        if (lookup && lookup.instrument && lookup.instrument[instrument_id]) {
+            return lookup.instrument[instrument_id].account_name;
         }
-        return transaction.instrument_id;
+        return instrument_id;
     };
+
+    // --- Tag handlers ---
 
     const handleAddTag = async () => {
         const tag = newTag.trim();
@@ -55,36 +74,186 @@ function Transaction({ transaction, lookup }) {
         }
     };
 
+    const tagsCell = (
+        <div className="tags-cell">
+            {tags.map(tag => (
+                <span key={tag} className="tag-pill">
+                    {tag}
+                    <button className="tag-remove" onClick={() => handleRemoveTag(tag)}>×</button>
+                </span>
+            ))}
+            {isAddingTag ? (
+                <input
+                    type="text"
+                    value={newTag}
+                    onChange={e => setNewTag(e.target.value)}
+                    onKeyDown={handleTagKeyDown}
+                    onBlur={() => { if (!newTag.trim()) setIsAddingTag(false); }}
+                    placeholder="tag name"
+                    className="tag-input"
+                    autoFocus
+                />
+            ) : (
+                <button className="tag-add-btn" onClick={() => setIsAddingTag(true)}>+</button>
+            )}
+        </div>
+    );
+
+    // --- Edit handlers ---
+
+    const handleEditChange = (e) => {
+        const { name, value } = e.target;
+        setEditData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleEditKeyDown = (e) => {
+        if (e.key === 'Escape') handleCancelEdit();
+    };
+
+    const handleSave = async () => {
+        try {
+            const response = await fetch(`http://127.0.0.1:5000/transaction/${transaction.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams(editData)
+            });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const updated = await response.json();
+            const next = {
+                transaction_date: updated.transaction_date,
+                posted_date: updated.posted_date,
+                description: updated.description,
+                amount: updated.amount,
+                instrument_id: updated.instrument_id
+            };
+            setDisplayData(next);
+            setEditData(next);
+            setIsEditing(false);
+        } catch (error) {
+            alert('Error updating transaction: ' + error.message);
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setEditData({ ...displayData });
+        setIsEditing(false);
+    };
+
+    // --- Delete handlers ---
+
+    const handleDelete = async () => {
+        try {
+            const response = await fetch(`http://127.0.0.1:5000/transaction/${transaction.id}`, {
+                method: 'DELETE'
+            });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            onDelete(transaction.id);
+        } catch (error) {
+            alert('Error deleting transaction: ' + error.message);
+        }
+    };
+
+    // --- Render ---
+
+    if (showConfirmDelete) {
+        return (
+            <tr>
+                <td colSpan="7" className="confirmation-row">
+                    <div className="confirmation-content">
+                        <span className="confirmation-text">Delete this transaction?</span>
+                        <div className="confirmation-buttons">
+                            <button onClick={() => setShowConfirmDelete(false)} className="btn-primary">
+                                Keep
+                            </button>
+                            <button onClick={handleDelete} className="btn-danger">
+                                Yes, Delete
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        );
+    }
+
+    if (isEditing) {
+        return (
+            <tr className="new-transaction-row">
+                <td>
+                    <input
+                        type="date"
+                        name="transaction_date"
+                        value={editData.transaction_date}
+                        onChange={handleEditChange}
+                        onKeyDown={handleEditKeyDown}
+                        className="new-input"
+                    />
+                </td>
+                <td>
+                    <input
+                        type="date"
+                        name="posted_date"
+                        value={editData.posted_date}
+                        onChange={handleEditChange}
+                        onKeyDown={handleEditKeyDown}
+                        className="new-input"
+                    />
+                </td>
+                <td>
+                    <input
+                        type="text"
+                        name="description"
+                        value={editData.description}
+                        onChange={handleEditChange}
+                        onKeyDown={handleEditKeyDown}
+                        className="new-input"
+                    />
+                </td>
+                <td>
+                    <input
+                        type="number"
+                        name="amount"
+                        step="0.01"
+                        value={editData.amount}
+                        onChange={handleEditChange}
+                        onKeyDown={handleEditKeyDown}
+                        className="new-input"
+                    />
+                </td>
+                <td>
+                    <select
+                        name="instrument_id"
+                        value={editData.instrument_id}
+                        onChange={handleEditChange}
+                        className="new-input"
+                        style={{ cursor: 'pointer' }}
+                    >
+                        {instruments && instruments.map((instrument) => (
+                            <option key={instrument.id} value={instrument.id}>
+                                {instrument.account_name}
+                            </option>
+                        ))}
+                    </select>
+                </td>
+                <td>{tagsCell}</td>
+                <td className="transaction-actions">
+                    <button onClick={handleSave} className="btn-primary">Save</button>
+                    <button onClick={handleCancelEdit} className="btn-danger">Cancel</button>
+                </td>
+            </tr>
+        );
+    }
+
     return (
-        <tr key={transaction.key}>
-            <td>{transaction.transaction_date}</td>
-            <td>{transaction.posted_date}</td>
-            <td>{transaction.description}</td>
-            <td>{transaction.amount}</td>
-            <td>{getInstrumentName()}</td>
-            <td>
-                <div className="tags-cell">
-                    {tags.map(tag => (
-                        <span key={tag} className="tag-pill">
-                            {tag}
-                            <button className="tag-remove" onClick={() => handleRemoveTag(tag)}>×</button>
-                        </span>
-                    ))}
-                    {isAddingTag ? (
-                        <input
-                            type="text"
-                            value={newTag}
-                            onChange={e => setNewTag(e.target.value)}
-                            onKeyDown={handleTagKeyDown}
-                            onBlur={() => { if (!newTag.trim()) setIsAddingTag(false); }}
-                            placeholder="tag name"
-                            className="tag-input"
-                            autoFocus
-                        />
-                    ) : (
-                        <button className="tag-add-btn" onClick={() => setIsAddingTag(true)}>+</button>
-                    )}
-                </div>
+        <tr>
+            <td>{displayData.transaction_date}</td>
+            <td>{displayData.posted_date}</td>
+            <td>{displayData.description}</td>
+            <td>{displayData.amount}</td>
+            <td>{getInstrumentName(String(displayData.instrument_id))}</td>
+            <td>{tagsCell}</td>
+            <td className="transaction-actions">
+                <button onClick={() => setIsEditing(true)} className="btn-secondary">Edit</button>
+                <button onClick={() => setShowConfirmDelete(true)} className="btn-danger">Delete</button>
             </td>
         </tr>
     );
@@ -308,13 +477,9 @@ function NewTransactionRow({ onCancel, onSubmit, instruments }) {
 
 export default function FilterableTransactionTable({ transactions, lookup }) {
     const [isAddingTransaction, setIsAddingTransaction] = useState(false);
+    const [txList, setTxList] = useState(transactions);
 
-    const getInstruments = () => {
-        if (lookup && lookup.instrument) {
-            return Object.values(lookup.instrument);
-        }
-        return [];
-    };
+    const instruments = lookup && lookup.instrument ? Object.values(lookup.instrument) : [];
 
     const handleAddTransaction = async (formData) => {
         try {
@@ -340,6 +505,10 @@ export default function FilterableTransactionTable({ transactions, lookup }) {
         }
     };
 
+    const handleDelete = (id) => {
+        setTxList(prev => prev.filter(t => t.id !== id));
+    };
+
     return (
         <div>
             <div>
@@ -362,7 +531,7 @@ export default function FilterableTransactionTable({ transactions, lookup }) {
                             <th>Amount</th>
                             <th>Instrument</th>
                             <th>Tags</th>
-                            {isAddingTransaction && <th>Actions</th>}
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -370,11 +539,17 @@ export default function FilterableTransactionTable({ transactions, lookup }) {
                             <NewTransactionRow
                                 onCancel={() => setIsAddingTransaction(false)}
                                 onSubmit={handleAddTransaction}
-                                instruments={getInstruments()}
+                                instruments={instruments}
                             />
                         )}
-                        {transactions.map((transaction) => (
-                            <Transaction key={transaction.id} transaction={transaction} lookup={lookup} />
+                        {txList.map((transaction) => (
+                            <Transaction
+                                key={transaction.id}
+                                transaction={transaction}
+                                lookup={lookup}
+                                instruments={instruments}
+                                onDelete={handleDelete}
+                            />
                         ))}
                     </tbody>
                 </table>
