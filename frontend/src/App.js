@@ -3,6 +3,7 @@ import logo from './logo.svg';
 import './App.css';
 import FilterableTransactionTable from './pages/transaction';
 import FilterableInstrumentTable from './pages/instrument';
+import StatementsTable from './pages/statement';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('transactions');
@@ -10,8 +11,11 @@ function App() {
   const [transactionLookup, setTransactionLookup] = useState({});
   const [instruments, setInstruments] = useState([]);
   const [instrumentLookup, setInstrumentLookup] = useState({});
+  const [statements, setStatements] = useState([]);
+  const [statementLookup, setStatementLookup] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -33,6 +37,14 @@ function App() {
           const data = await response.json();
           setInstruments(data.instruments);
           setInstrumentLookup(data.lookup || {});
+        } else if (currentPage === 'statements') {
+          const response = await fetch('http://127.0.0.1:5000/statement/');
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          setStatements(data.statements);
+          setStatementLookup(data.lookup);
         }
         setError(null);
         setLoading(false);
@@ -44,7 +56,7 @@ function App() {
     };
 
     fetchData();
-  }, [currentPage]);
+  }, [currentPage, refreshKey]);
 
   const getPageTitle = () => {
     switch(currentPage) {
@@ -54,6 +66,8 @@ function App() {
         return 'Transactions';
       case 'instruments':
         return 'Instruments';
+      case 'statements':
+        return 'Statements';
       default:
         return 'Juiko';
     }
@@ -78,11 +92,17 @@ function App() {
           >
             💳 Transactions
           </button>
-          <button 
+          <button
             className={`sidebar-button ${currentPage === 'instruments' ? 'active' : ''}`}
             onClick={() => setCurrentPage('instruments')}
           >
             🏦 Instruments
+          </button>
+          <button
+            className={`sidebar-button ${currentPage === 'statements' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('statements')}
+          >
+            📄 Statements
           </button>
         </nav>
       </div>
@@ -110,6 +130,13 @@ function App() {
         )}
         {!loading && !error && currentPage === 'transactions' && <FilterableTransactionTable transactions={transactions} lookup={transactionLookup} />}
         {!loading && !error && currentPage === 'instruments' && <FilterableInstrumentTable instruments={instruments} lookup={instrumentLookup} />}
+        {!loading && !error && currentPage === 'statements' && (
+          <StatementsTable
+            statements={statements}
+            lookup={statementLookup}
+            onRefresh={() => setRefreshKey(k => k + 1)}
+          />
+        )}
       </div>
     </div>
   );

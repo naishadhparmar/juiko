@@ -18,6 +18,19 @@ CREATE TABLE IF NOT EXISTS instruments (
     FOREIGN KEY (type) REFERENCES instrument_types(id)
 );
 
+CREATE TYPE statement_status AS ENUM ('pending', 'processing', 'completed', 'failed');
+
+CREATE TABLE IF NOT EXISTS statements (
+    id SERIAL PRIMARY KEY,
+    upload_date TIMESTAMP NOT NULL DEFAULT NOW(),
+    original_filename TEXT NOT NULL,
+    filepath TEXT NOT NULL,
+    instrument_id INTEGER NOT NULL,
+    row_count INTEGER NOT NULL DEFAULT 0,
+    status statement_status NOT NULL DEFAULT 'pending',
+    FOREIGN KEY (instrument_id) REFERENCES instruments(id)
+);
+
 CREATE TABLE IF NOT EXISTS transactions (
     id SERIAL PRIMARY KEY,
     transaction_date DATE NOT NULL,
@@ -25,7 +38,9 @@ CREATE TABLE IF NOT EXISTS transactions (
     description TEXT,
     amount DECIMAL(11, 2) NOT NULL,
     instrument_id INTEGER NOT NULL,
-    FOREIGN KEY (instrument_id) REFERENCES instruments(id)
+    statement_id INTEGER,
+    FOREIGN KEY (instrument_id) REFERENCES instruments(id),
+    FOREIGN KEY (statement_id) REFERENCES statements(id)
 );
 
 CREATE TABLE IF NOT EXISTS transaction_tags (

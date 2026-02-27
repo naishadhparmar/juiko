@@ -13,9 +13,11 @@ class Transaction(Base):
     description: Mapped[str] = mapped_column(Text, nullable=True)
     amount: Mapped[float] = mapped_column(Numeric(11, 2))
     instrument_id: Mapped[int] = mapped_column(ForeignKey("instruments.id"))
+    statement_id: Mapped[int] = mapped_column(ForeignKey("statements.id"), nullable=True)
 
     # Relationships
     instrument: Mapped["Instrument"] = relationship(back_populates="transactions")
+    statement: Mapped["Statement"] = relationship(back_populates="transactions")
     tags: Mapped[List["TransactionTag"]] = relationship(back_populates="transaction", cascade="all, delete-orphan")
 
     def json(self):
@@ -27,6 +29,8 @@ class Transaction(Base):
             "amount": float(self.amount),
             "instrument_id": self.instrument_id,
             "instrument": self.instrument.account_name if self.instrument else None,
+            "statement_id": self.statement_id,
+            "source": "manual" if self.statement_id is None else self.statement_id,
             "tags": [tag.tag for tag in self.tags]
         }
 

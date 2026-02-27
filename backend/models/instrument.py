@@ -14,6 +14,7 @@ class Instrument(Base):
     # Relationships
     instrument_type: Mapped["InstrumentType"] = relationship(back_populates="instruments")
     transactions: Mapped[List["Transaction"]] = relationship(back_populates="instrument")
+    statements: Mapped[List["Statement"]] = relationship(back_populates="instrument")
 
     def json(self):
         return {

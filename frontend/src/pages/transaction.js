@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 function Transaction({ transaction, lookup, instruments, onDelete }) {
     const [tags, setTags] = useState(transaction.tags || []);
@@ -475,8 +475,125 @@ function NewTransactionRow({ onCancel, onSubmit, instruments }) {
     );
 }
 
+function UploadStatementModal({ onClose, instruments }) {
+    const [instrumentId, setInstrumentId] = useState('');
+    const [file, setFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [result, setResult] = useState(null);
+    const fileInputRef = useRef(null);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+
+    const handleSubmit = async () => {
+        if (!file) return setResult({ type: 'error', message: 'Please select a CSV file.' });
+        if (!instrumentId) return setResult({ type: 'error', message: 'Please select an instrument.' });
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('instrument_id', instrumentId);
+
+        setIsUploading(true);
+        setResult(null);
+        try {
+            const response = await fetch('http://127.0.0.1:5000/statement/', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                setResult({ type: 'error', message: data.error || 'Upload failed.' });
+            } else {
+                setResult({
+                    type: 'success',
+                    message: `Successfully imported ${data.imported} transaction${data.imported === 1 ? '' : 's'}.`,
+                    warnings: data.warnings
+                });
+            }
+        } catch (error) {
+            setResult({ type: 'error', message: 'Upload failed: ' + error.message });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleOverlayClick = (e) => {
+        if (e.target === e.currentTarget) onClose();
+    };
+
+    return (
+        <div className="modal-overlay" onClick={handleOverlayClick}>
+            <div className="modal">
+                <h2 className="modal-title">Upload Statement</h2>
+
+                <div className="modal-field">
+                    <label className="modal-label">Instrument</label>
+                    <select
+                        value={instrumentId}
+                        onChange={e => setInstrumentId(e.target.value)}
+                        className="new-input"
+                        style={{ cursor: 'pointer' }}
+                    >
+                        <option value="">Select Instrument</option>
+                        {instruments.map(i => (
+                            <option key={i.id} value={i.id}>{i.account_name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="modal-field">
+                    <label className="modal-label">CSV File</label>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".csv"
+                        onChange={e => { setFile(e.target.files[0]); setResult(null); }}
+                        className="new-input"
+                        style={{ padding: '6px 8px' }}
+                    />
+                </div>
+
+                {result && (
+                    <div className={`upload-result ${result.type}`}>
+                        {result.message}
+                        {result.warnings && result.warnings.length > 0 && (
+                            <div className="upload-warnings">
+                                {result.warnings.length} row{result.warnings.length === 1 ? '' : 's'} skipped due to errors.
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                <div className="modal-footer">
+                    <button
+                        onClick={result?.type === 'success' ? () => window.location.reload() : onClose}
+                        className="btn-secondary"
+                    >
+                        {result?.type === 'success' ? 'Done' : 'Cancel'}
+                    </button>
+                    {result?.type !== 'success' && (
+                        <button
+                            onClick={handleSubmit}
+                            className="btn-primary"
+                            disabled={isUploading}
+                        >
+                            {isUploading ? 'Uploading...' : 'Upload'}
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function FilterableTransactionTable({ transactions, lookup }) {
     const [isAddingTransaction, setIsAddingTransaction] = useState(false);
+    const [showUploadModal, setShowUploadModal] = useState(false);
     const [txList, setTxList] = useState(transactions);
 
     const instruments = lookup && lookup.instrument ? Object.values(lookup.instrument) : [];
@@ -511,13 +628,26 @@ export default function FilterableTransactionTable({ transactions, lookup }) {
 
     return (
         <div>
-            <div>
+            {showUploadModal && (
+                <UploadStatementModal
+                    onClose={() => setShowUploadModal(false)}
+                    instruments={instruments}
+                />
+            )}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '0' }}>
                 <button
                     onClick={() => setIsAddingTransaction(true)}
                     disabled={isAddingTransaction}
                     className="add-transaction-button"
                 >
                     + Add Transaction
+                </button>
+                <button
+                    onClick={() => setShowUploadModal(true)}
+                    className="add-transaction-button"
+                    style={{ backgroundColor: 'white', color: 'var(--primary-color)', border: '1px solid var(--primary-color)' }}
+                >
+                    Upload Statement
                 </button>
             </div>
 
