@@ -1,0 +1,84 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Juiko — AI Tagging Configuration
+#
+# Edit this file to change how transactions get tagged.
+# Restart the Flask backend to pick up any changes (no code edits needed).
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Ollama model to use for tag suggestions.
+# Run `ollama pull <model>` to download a new one before switching.
+#
+# Options (larger = smarter but slower):
+#   llama3.2:1b  (~1.3 GB)   fastest, basic accuracy
+#   llama3.2:3b  (~2.2 GB)   good balance — recommended
+#   llama3.1:8b  (~5.0 GB)   best accuracy, needs 16 GB+ RAM
+model: llama3.2:3b
+
+# Generation settings.
+# temperature: 0.0 = fully deterministic, 1.0 = creative/unpredictable
+# max_examples: how many few-shot examples (from your manual tags) to include
+# examples_per_tag: how many examples to sample per tag type
+temperature: 0.1
+max_examples: 20
+examples_per_tag: 2
+
+# Base system prompt sent to the model.
+# The category definitions below are automatically appended to this.
+system_prompt: |
+  You are a personal finance transaction tagger. Your only job is to assign
+  one short lowercase tag to a transaction.
+  Rules:
+  - Reply with a single word or short hyphenated phrase (e.g. "groceries", "dining-out")
+  - Lowercase only, no punctuation, no explanation
+  - Use the category definitions below to guide your decision
+  - If the user has manually tagged similar transactions, prefer their exact wording
+  - Only invent a new tag if the transaction clearly does not fit any category
+  - Output only the tag — never explain, never add filler words
+
+# Spending categories.
+# The model reads these descriptions to decide which tag to assign.
+# Add, rename, or remove categories freely. The tag name is the key (left side).
+# Be as specific as you like in the description — more detail = better accuracy.
+categories:
+  clothing: >
+    Any fashion or clothing brand or retailer. Examples: H&M, Levi's, Zara,
+    Gap, Nike, Adidas, Uniqlo, ASOS, Nordstrom, Macy's, TJ Maxx, Old Navy,
+    Forever 21, Shein, PacSun, Urban Outfitters.
+
+  debt-repayment: >
+    Payments toward a loan, credit card, or other debt. Look for entries like
+    "Payment received", "Payment Thank You", "AutoPay", "Loan payment", or any
+    large credit on the statement from a known bank or lender.
+
+  entertainment: >
+    Streaming services (Netflix, Spotify, Disney+, Hulu, Apple TV+, HBO Max,
+    YouTube Premium, Peacock), ticketing (Ticketmaster, StubHub, Fandango),
+    or paid activities such as skydiving, scuba diving, escape rooms, bowling,
+    laser tag, mini golf, or online learning platforms like Duolingo, Rosetta
+    Stone, Coursera, Udemy, Skillshare.
+
+  food: >
+    Any grocery store, restaurant, cafe, fast food chain, bar, or food delivery
+    service. Grocery examples: Trader Joe's, Whole Foods, Safeway, Walmart,
+    Costco, Aldi, Kroger, Sprouts, HEB. Restaurant clues: words like coffee,
+    pizza, burger, sushi, taco, noodle, ramen, bbq, or name suffixes like
+    -eria, -ery, grill, kitchen, bistro, diner, cafe, bakery, bar & grill,
+    pub, cantina, chophouse. Delivery: DoorDash, Uber Eats, Grubhub, Instacart.
+
+  rent: >
+    Typically the single largest recurring payment on the statement. Often paid
+    to a property management company or via Zelle/Venmo to a landlord. The
+    description may include words like "rent", "lease", "apt", or "property".
+
+  travel: >
+    Travel booking sites (Expedia, Priceline, Kayak, Booking.com, Airbnb,
+    Hotels.com, VRBO), ride-hailing (Uber, Lyft, Waymo), public transit
+    (Clipper, NYCT Paygo, NJ Transit, Caltrain, MTA, BART, Metra, SmarTrip),
+    gas stations (Arco, Shell, Chevron, BP, Mobil, Exxon, Circle K, Valero),
+    or car rental agencies (Hertz, Enterprise, Avis, National, Budget, Dollar,
+    Alamo, Turo).
+
+  utilities: >
+    Internet, mobile phone, or electricity/gas providers. Examples: AT&T,
+    Verizon, Mint Mobile, T-Mobile, Comcast, Xfinity, Cox, Spectrum, PG&E,
+    ConEd, Duke Energy, Ameren, Google Fi, Visible, Cricket Wireless.

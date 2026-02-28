@@ -5,7 +5,7 @@ from datetime import datetime
 from flask import current_app, Blueprint, request, jsonify
 from models import Statement, Instrument, TransactionTag
 from services.transaction import create_transaction
-from services.tagging import build_examples, suggest_tag
+from services.tagging import build_context, suggest_tag
 
 bp = Blueprint('statement_bp', __name__)
 
@@ -39,7 +39,7 @@ def _process_statement(app, statement_id, rows, col_indices, instrument_id):
 
             instrument = db.session.get(Instrument, instrument_id)
             instrument_name = instrument.account_name if instrument else ''
-            examples = build_examples(db)
+            examples, known_tags = build_context(db)
 
             imported = 0
             for i, row in enumerate(rows, start=2):
@@ -66,7 +66,8 @@ def _process_statement(app, statement_id, rows, col_indices, instrument_id):
                         description=row[desc_idx],
                         amount=float(transaction.amount),
                         instrument_name=instrument_name,
-                        examples=examples
+                        examples=examples,
+                        known_tags=known_tags
                     )
                     if tag:
                         db.session.add(TransactionTag(

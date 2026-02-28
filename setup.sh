@@ -140,8 +140,8 @@ ok "Node dependencies installed"
 
 # ── Ollama model ──────────────────────────────────────────────────────────────
 echo ""
-log "Pulling Ollama model llama3.2:1b (~1.3 GB, skipped if already downloaded)..."
-ollama pull llama3.2:1b
+log "Pulling Ollama model llama3.2:3b (~2.2 GB, skipped if already downloaded)..."
+ollama pull llama3.2:3b
 ok "Model llama3.2:1b ready"
 
 # ── Launch all services ───────────────────────────────────────────────────────

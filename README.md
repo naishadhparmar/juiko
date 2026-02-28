@@ -26,7 +26,7 @@ The script will:
 3. Create the `juiko_db` database and run the schema
 4. Create a Python virtualenv and install backend dependencies
 5. Install frontend Node dependencies
-6. Pull the `llama3.2:1b` LLM model (~1.3 GB, only on first run)
+6. Pull the `llama3.2:3b` LLM model (~2.2 GB, only on first run)
 7. Start all four services and open the app in your browser
 
 Once running:
@@ -76,28 +76,39 @@ Juiko is a self-hosted personal finance management tool. The core idea is that a
 
 The emphasis on local-first design — a PostgreSQL cluster in `./data/`, Ollama running on your machine — means your financial data never leaves your computer.
 
+### Customising the AI tagger
+
+The AI tagging behaviour is fully configurable without touching any code. Edit **`backend/tagging_config.yaml`** and restart the Flask backend to apply changes:
+
+- **`model`** — swap the Ollama model (e.g. `llama3.1:8b` for better accuracy, `llama3.2:1b` for speed)
+- **`categories`** — the spending taxonomy the model reasons from. Each key is the tag name; the value is a plain-English description with merchant examples. Add, rename, or remove categories freely.
+- **`system_prompt`** — the base instructions sent to the model
+- **`temperature`**, **`max_examples`**, **`examples_per_tag`** — generation and sampling controls
+
 ---
 
 ## Project Structure
 
 ```
 juiko/
-├── setup.sh                  # One-command setup and launch script
+├── setup.sh                    # One-command setup and launch script
+├── README.md
 ├── sql/
-│   ├── create_tables.sql     # Full database schema
-│   └── migrate.sql           # Incremental migration scripts
+│   ├── create_tables.sql       # Full database schema
+│   └── migrate.sql             # Incremental migration scripts
 ├── scripts/
-│   ├── init_db.sh            # initdb — initialize the PostgreSQL cluster
-│   ├── start_db.sh           # pg_ctl start on port 5430
-│   └── create_tables.sh      # createdb + run schema
-├── data/                     # PostgreSQL data directory (git-ignored)
-├── logs/                     # PostgreSQL log output (git-ignored)
+│   ├── init_db.sh              # initdb — initialize the PostgreSQL cluster
+│   ├── start_db.sh             # pg_ctl start on port 5430
+│   └── create_tables.sh        # createdb + run schema
+├── data/                       # PostgreSQL data directory (git-ignored)
+├── logs/                       # PostgreSQL log output (git-ignored)
 ├── backend/
-│   ├── app.py                # Flask application factory + blueprint registration
-│   ├── config.py             # Database URL config (env var or interactive prompt)
+│   ├── app.py                  # Flask application factory + blueprint registration
+│   ├── config.py               # Database URL config (env var or interactive prompt)
 │   ├── requirements.txt
+│   ├── tagging_config.yaml     # ✏️  AI tagger settings — edit to customise tagging behaviour
 │   ├── models/
-│   │   ├── base.py           # SQLAlchemy declarative base
+│   │   ├── base.py             # SQLAlchemy declarative base
 │   │   ├── instrument_type.py
 │   │   ├── instrument.py
 │   │   ├── statement.py
@@ -106,20 +117,20 @@ juiko/
 │   ├── controllers/
 │   │   ├── instrument_type.py
 │   │   ├── instrument.py
-│   │   ├── statement.py      # CSV upload + async processing
-│   │   └── transaction.py    # CRUD + tag management
+│   │   ├── statement.py        # CSV upload + async background processing
+│   │   └── transaction.py      # CRUD + tag management
 │   └── services/
-│       ├── transaction.py    # Shared parsing and creation logic
-│       └── tagging.py        # Ollama few-shot tag suggestion
+│       ├── transaction.py      # Shared parsing and creation logic
+│       └── tagging.py          # Ollama few-shot tag suggestion (reads tagging_config.yaml)
 └── frontend/
     └── src/
-        ├── App.js            # Root component, routing, data fetching
-        ├── App.css           # Global styles and component styles
-        ├── index.css         # CSS custom properties (design tokens)
+        ├── App.js              # Root component, page switching, data fetching
+        ├── App.css             # Global styles and component styles
+        ├── index.css           # CSS custom properties (design tokens)
         └── pages/
             ├── transaction.js  # Transaction table, inline edit, bulk delete, CSV upload modal
             ├── instrument.js   # Instrument table, inline edit/delete
-            └── statement.js    # Statement list with status tracking
+            └── statement.js    # Statement list with async status tracking
 ```
 
 ---
@@ -142,7 +153,7 @@ When a statement CSV is uploaded, the controller immediately returns `202 Accept
 
 **AI tagging with Ollama**
 
-Once per statement import, `build_examples()` queries all manually-tagged transactions and samples up to 20 examples distributed uniformly across all tag types (so the model doesn't overfit to the most common tags). This example set is compiled into a few-shot prompt and sent to a local `llama3.2:1b` model via `POST localhost:11434/api/generate`. The model returns a single lowercase tag. If Ollama is unavailable or returns garbage, the function returns `None` and the transaction is simply left untagged — it never raises.
+Once per statement import, `build_context()` queries all manually-tagged transactions and returns two things: uniformly-sampled few-shot examples (up to 20, spread across all tag types so the model doesn't overfit to the most common ones), and the full list of known tags. Both are compiled into a structured prompt — with the known tag vocabulary listed explicitly so the model picks from familiar options before inventing new ones — and sent to a local `llama3.2:3b` model via `POST localhost:11434/api/generate`. The response goes through a dedicated cleaning function that strips label prefixes, filters stop words, and validates output with a regex. If Ollama is unavailable or returns garbage, the function returns `None` and the transaction is left untagged — it never raises.
 
 Tags carry a `source` field (`manual` or `ai`) stored in the `transaction_tags` table. The UI renders AI tags in purple and manual tags in blue.
 
