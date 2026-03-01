@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 
 function Transaction({ transaction, lookup, instruments, onDelete, isSelected, onToggle }) {
     const [tags, setTags] = useState(transaction.tags || []);
@@ -598,13 +598,60 @@ export default function FilterableTransactionTable({ transactions, lookup }) {
     const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
     const selectAllRef = useRef(null);
 
+    const [filters, setFilters] = useState({
+        search: '', instrument_id: '', dateFrom: '', dateTo: '',
+        amountMin: '', amountMax: '', tags: []
+    });
+    const [showFilters, setShowFilters] = useState(false);
+    const [filterTagInput, setFilterTagInput] = useState('');
+
     const instruments = lookup && lookup.instrument ? Object.values(lookup.instrument) : [];
+
+    const allTags = useMemo(() => {
+        const tagSet = new Set();
+        txList.forEach(tx => (tx.tags || []).forEach(t => tagSet.add(t.tag)));
+        return [...tagSet].sort();
+    }, [txList]);
+
+    const visibleTx = useMemo(() => {
+        return txList.filter(tx => {
+            if (filters.search && !tx.description.toLowerCase().includes(filters.search.toLowerCase())) return false;
+            if (filters.instrument_id && String(tx.instrument_id) !== filters.instrument_id) return false;
+            if (filters.dateFrom && tx.transaction_date < filters.dateFrom) return false;
+            if (filters.dateTo && tx.transaction_date > filters.dateTo) return false;
+            if (filters.amountMin !== '' && parseFloat(tx.amount) < parseFloat(filters.amountMin)) return false;
+            if (filters.amountMax !== '' && parseFloat(tx.amount) > parseFloat(filters.amountMax)) return false;
+            if (filters.tags.length > 0 && !(tx.tags || []).some(t => filters.tags.includes(t.tag))) return false;
+            return true;
+        });
+    }, [txList, filters]);
+
+    const activeFilterCount = [
+        filters.instrument_id !== '',
+        filters.dateFrom !== '',
+        filters.dateTo !== '',
+        filters.amountMin !== '',
+        filters.amountMax !== '',
+        filters.tags.length > 0,
+    ].filter(Boolean).length;
+
+    const clearFilters = () => { setFilters({ search: '', instrument_id: '', dateFrom: '', dateTo: '', amountMin: '', amountMax: '', tags: [] }); setFilterTagInput(''); };
+
+    const addFilterTag = (tag) => {
+        const t = tag.trim().toLowerCase();
+        if (t && !filters.tags.includes(t))
+            setFilters(prev => ({ ...prev, tags: [...prev.tags, t] }));
+    };
+
+    const removeFilterTag = (tag) => setFilters(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }));
+
+    const setFilter = (key, value) => setFilters(prev => ({ ...prev, [key]: value }));
 
     useEffect(() => {
         if (selectAllRef.current) {
-            selectAllRef.current.indeterminate = selectedIds.size > 0 && selectedIds.size < txList.length;
+            selectAllRef.current.indeterminate = selectedIds.size > 0 && selectedIds.size < visibleTx.length;
         }
-    }, [selectedIds, txList]);
+    }, [selectedIds, visibleTx]);
 
     const handleToggle = (id) => {
         setSelectedIds(prev => {
@@ -616,10 +663,10 @@ export default function FilterableTransactionTable({ transactions, lookup }) {
     };
 
     const handleToggleAll = () => {
-        if (selectedIds.size === txList.length) {
+        if (selectedIds.size === visibleTx.length) {
             setSelectedIds(new Set());
         } else {
-            setSelectedIds(new Set(txList.map(t => t.id)));
+            setSelectedIds(new Set(visibleTx.map(t => t.id)));
         }
     };
 
@@ -706,6 +753,83 @@ export default function FilterableTransactionTable({ transactions, lookup }) {
                 )}
             </div>
 
+            <div className="filter-bar">
+                <input
+                    type="text"
+                    className="filter-search"
+                    placeholder="Search descriptions..."
+                    value={filters.search}
+                    onChange={e => setFilter('search', e.target.value)}
+                />
+                <button
+                    className={`filter-toggle-btn ${showFilters ? 'active' : ''}`}
+                    onClick={() => setShowFilters(p => !p)}
+                >
+                    Filters{activeFilterCount > 0 && <span className="filter-badge">{activeFilterCount}</span>}
+                </button>
+                {(activeFilterCount > 0 || filters.search) && (
+                    <button className="filter-clear-btn" onClick={clearFilters}>Clear all</button>
+                )}
+                {visibleTx.length < txList.length && (
+                    <span className="filter-count">{visibleTx.length} of {txList.length}</span>
+                )}
+            </div>
+
+            {showFilters && (
+                <div className="filter-panel">
+                    <div className="filter-group">
+                        <label className="filter-label">From</label>
+                        <input type="date" className="filter-input" value={filters.dateFrom} onChange={e => setFilter('dateFrom', e.target.value)} />
+                    </div>
+                    <div className="filter-group">
+                        <label className="filter-label">To</label>
+                        <input type="date" className="filter-input" value={filters.dateTo} onChange={e => setFilter('dateTo', e.target.value)} />
+                    </div>
+                    <div className="filter-group">
+                        <label className="filter-label">Account</label>
+                        <select className="filter-input" value={filters.instrument_id} onChange={e => setFilter('instrument_id', e.target.value)}>
+                            <option value="">All</option>
+                            {instruments.map(i => <option key={i.id} value={String(i.id)}>{i.account_name}</option>)}
+                        </select>
+                    </div>
+                    <div className="filter-group">
+                        <label className="filter-label">Min $</label>
+                        <input type="number" className="filter-input" placeholder="0.00" step="0.01" value={filters.amountMin} onChange={e => setFilter('amountMin', e.target.value)} />
+                    </div>
+                    <div className="filter-group">
+                        <label className="filter-label">Max $</label>
+                        <input type="number" className="filter-input" placeholder="0.00" step="0.01" value={filters.amountMax} onChange={e => setFilter('amountMax', e.target.value)} />
+                    </div>
+                    <div className="filter-group filter-group-tags">
+                        <label className="filter-label">Tags <span className="filter-label-hint">(OR — any match)</span></label>
+                        <div className="filter-tag-area">
+                            {filters.tags.map(tag => (
+                                <span key={tag} className="tag-pill">
+                                    {tag}
+                                    <button className="tag-remove" onClick={() => removeFilterTag(tag)}>×</button>
+                                </span>
+                            ))}
+                            <input
+                                list="filter-tag-options"
+                                type="text"
+                                className="filter-tag-input"
+                                placeholder={filters.tags.length === 0 ? 'Type a tag, press Enter…' : 'Add another…'}
+                                value={filterTagInput}
+                                onChange={e => setFilterTagInput(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') { e.preventDefault(); addFilterTag(filterTagInput); setFilterTagInput(''); }
+                                    if (e.key === 'Backspace' && filterTagInput === '' && filters.tags.length > 0)
+                                        removeFilterTag(filters.tags[filters.tags.length - 1]);
+                                }}
+                            />
+                            <datalist id="filter-tag-options">
+                                {allTags.filter(t => !filters.tags.includes(t)).map(t => <option key={t} value={t} />)}
+                            </datalist>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {showBulkDeleteConfirm && (
                 <div className="bulk-delete-bar">
                     <span>Delete {selectedIds.size} transaction{selectedIds.size === 1 ? '' : 's'}?</span>
@@ -724,7 +848,7 @@ export default function FilterableTransactionTable({ transactions, lookup }) {
                                 <input
                                     type="checkbox"
                                     ref={selectAllRef}
-                                    checked={txList.length > 0 && selectedIds.size === txList.length}
+                                    checked={visibleTx.length > 0 && selectedIds.size === visibleTx.length}
                                     onChange={handleToggleAll}
                                 />
                             </th>
@@ -745,7 +869,7 @@ export default function FilterableTransactionTable({ transactions, lookup }) {
                                 instruments={instruments}
                             />
                         )}
-                        {txList.map((transaction) => (
+                        {visibleTx.map((transaction) => (
                             <Transaction
                                 key={transaction.id}
                                 transaction={transaction}

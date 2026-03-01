@@ -301,6 +301,180 @@ tbody tr:hover {
   gap: 8px;
 }
 
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+
+.filter-search {
+  flex: 1;
+  padding: 7px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: white;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.filter-search:focus {
+  border-color: var(--primary-color);
+}
+
+.filter-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: white;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.filter-toggle-btn:hover,
+.filter-toggle-btn.active {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.filter-badge {
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  line-height: 1.4;
+}
+
+.filter-clear-btn {
+  padding: 7px 12px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 6px;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.filter-clear-btn:hover {
+  color: var(--danger-color);
+}
+
+.filter-count {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.filter-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-top: 8px;
+  margin-bottom: 12px;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.filter-input {
+  box-sizing: border-box;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: white;
+  outline: none;
+  min-width: 120px;
+  transition: border-color 0.15s ease;
+  cursor: auto;
+}
+
+.filter-input:focus {
+  border-color: var(--primary-color);
+}
+
+select.filter-input {
+  cursor: pointer;
+}
+
+.filter-group-tags {
+  flex: 1;
+  min-width: 220px;
+}
+
+.filter-label-hint {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 4px;
+}
+
+.filter-tag-area {
+  box-sizing: border-box;
+  height: 34px;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: white;
+  overflow-x: auto;
+  overflow-y: hidden;
+  cursor: text;
+  transition: border-color 0.15s ease;
+}
+
+.filter-tag-area:focus-within {
+  border-color: var(--primary-color);
+}
+
+.filter-tag-input {
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: transparent;
+  min-width: 140px;
+  flex: 1;
+  padding: 0;
+}
+
 /* Checkbox column */
 .checkbox-cell {
   width: 36px;
