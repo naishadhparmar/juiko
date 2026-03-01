@@ -23,11 +23,9 @@
   margin-bottom: 32px;
 }
 
-.sidebar-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--primary-color);
-  margin: 0;
+.sidebar-logo {
+  width: 48px;
+  height: 48px;
 }
 
 .sidebar-nav {

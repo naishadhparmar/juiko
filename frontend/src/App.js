@@ -77,7 +77,7 @@ function App() {
     <div className="App">
       <div className="sidebar">
         <div className="sidebar-header">
-          <h1 className="sidebar-title">Juiko</h1>
+          <img src="/app-icon.svg" alt="Juiko" className="sidebar-logo" />
         </div>
         <nav className="sidebar-nav">
           <button 
